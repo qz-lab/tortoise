@@ -18,12 +18,12 @@ module fetch_stage #(
     input   logic   clk_i, rst_ni, flush_i, debug_mode_i,
 
     /* fallback signals to update the prediction history */
-    input   logic               fb_valid_i, fb_branch_taken_i,
-    input   riscv_pkg::addr_t   fb_branch_pc_i, fb_target_addr_i,
+    input   logic                   fb_valid_i, fb_branch_taken_i,
+    input   riscv_pkg::addr_t       fb_branch_pc_i, fb_target_addr_i,
     input   tortoise_pkg::predict_t fb_type_i,
 
     /* fetch instructions from the lower level */
-    output  logic   fetch_req_o,
+    output  logic                       fetch_req_o,
     output  riscv_pkg::addr_t           fetch_addr_o,
 
     input   logic   fetch_ack_i,
