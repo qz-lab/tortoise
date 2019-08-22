@@ -3,3 +3,8 @@
 
 # We're still preparing the documents.
 docs/
+
+# not ready to commit
+src/axi/
+src/cells/rr_arbitor.sv
+src/restrictions.sv
