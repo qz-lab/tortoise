@@ -82,7 +82,7 @@ typedef enum logic [6:0] {
     // comparisons
     BLTS, BLTU, BGES, BGEU, BEQ, BNE,
     // jumps
-    JALR, BRANCH,
+    JAL_R, BRANCH_R,
     // set lower than operations
     SLTS, SLTU,
     // CSR functions
@@ -119,17 +119,27 @@ typedef struct packed {
 
 typedef struct packed {
     logic       valid;
-    addr_t      pc;            // PC of instruction
-    sb_idx_t    trans_id;      // this can potentially be simplified, we could index the scoreboard entry
-                                             // with the transaction id in any case make the width more generic
-    fu_t        fu;            // functional unit to use
-    fu_op       op;            // operation to perform in each functional unit
-    operand_t   operand1;           // register source address 1
-    operand_t   operand2;           // register source address 2
-    operand_t   operand3;           // register source address 2
-    operand_t   result;
-    exception_t ex;            // exception has occurred
-    sbe_predict_t   predict;            // branch predict scoreboard data structure
+    addr_t      pc;         /* PC of instruction */
+    sb_idx_t    index;      /* the entry location in the ScoreBoard */
+    fu_t        fu;         /* functional unit to use */
+    fu_op       op;         /* operation to perform in each functional unit */
+    operand_t   operand1;   /* operand 1: the source register or value */
+    operand_t   operand2;   /* operand 2: the source register or value */
+    operand_t   operand3;   /* operand 3: the source register or value */
+    operand_t   result;     /* result: the target register and value */
+    exception_t ex;         /* exception has occurred */
+    sbe_predict_t   predict;    /* branch predict scoreboard data structure */
 } scoreboard_entry_t;
+
+/* All information needed to determine whether we need to associate an interrupt
+ * with the corresponding instruction or not.
+ */
+typedef struct packed {
+  logic [63:0] mie;
+  logic [63:0] mip;
+  logic [63:0] mideleg;
+  logic        sie;
+  logic        global_enable;
+} irq_ctrl_t;
 
 endpackage: tortoise_pkg

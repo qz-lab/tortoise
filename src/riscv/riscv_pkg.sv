@@ -90,8 +90,9 @@ function automatic data_t j_imm(logic [31:7] rem);  /* 20 bits, [20:1] */
         1'b0};
 endfunction /* verilator lint_on UNUSED */
 
-/* exception */
+/* exceptions and interrupts */
 typedef enum logic [RV_XLEN-1:0] {
+    /* synchronous exception */
     INSTR_ADDR_MISALIGNED   = RV_XLEN'(0),
     INSTR_ACCESS_FAULT      = RV_XLEN'(1),
     ILLEGAL_INSTR           = RV_XLEN'(2),
@@ -106,11 +107,33 @@ typedef enum logic [RV_XLEN-1:0] {
     INSTR_PAGE_FAULT        = RV_XLEN'(12),   /* Instruction page fault */
     LOAD_PAGE_FAULT         = RV_XLEN'(13),   /* Load page fault */
     STORE_PAGE_FAULT        = RV_XLEN'(15),   /* Store page fault */
-    DEBUG_REQUEST           = RV_XLEN'(24)    /* Custom: Debug request */
+    DEBUG_REQUEST           = RV_XLEN'(24),   /* Custom: Debug request */
+
+    /* interrupt */
+    U_SW_INTERRUPT          = {1'b1, (RV_XLEN-1)'(0)},
+    S_SW_INTERRUPT          = {1'b1, (RV_XLEN-1)'(1)},
+    M_SW_INTERRUPT          = {1'b1, (RV_XLEN-1)'(3)},
+    U_TIMER_INTERRUPT       = {1'b1, (RV_XLEN-1)'(4)},
+    S_TIMER_INTERRUPT       = {1'b1, (RV_XLEN-1)'(5)},
+    M_TIMER_INTERRUPT       = {1'b1, (RV_XLEN-1)'(7)},
+    U_EXT_INTERRUPT         = {1'b1, (RV_XLEN-1)'(8)},
+    S_EXT_INTERRUPT         = {1'b1, (RV_XLEN-1)'(9)},
+    M_EXT_INTERRUPT         = {1'b1, (RV_XLEN-1)'(11)}
 } ex_cause_t;
+
+localparam  logic [RV_XLEN-1:0] U_SW_INTR_MASK      = RV_XLEN'(1<<0);
+localparam  logic [RV_XLEN-1:0] S_SW_INTR_MASK      = RV_XLEN'(1<<1);
+localparam  logic [RV_XLEN-1:0] M_SW_INTR_MASK      = RV_XLEN'(1<<3);
+localparam  logic [RV_XLEN-1:0] U_TIMER_INTR_MASK   = RV_XLEN'(1<<4);
+localparam  logic [RV_XLEN-1:0] S_TIMER_INTR_MASK   = RV_XLEN'(1<<5);
+localparam  logic [RV_XLEN-1:0] M_TIMER_INTR_MASK   = RV_XLEN'(1<<7);
+localparam  logic [RV_XLEN-1:0] U_EXT_INTR_MASK     = RV_XLEN'(1<<8);
+localparam  logic [RV_XLEN-1:0] S_EXT_INTR_MASK     = RV_XLEN'(1<<9);
+localparam  logic [RV_XLEN-1:0] M_EXT_INTR_MASK     = RV_XLEN'(1<<11);
 
 typedef logic [RV_XLEN-1:0] ex_tval_t;
 
+/* interrupt */
 
 /* Privilege */
 // --------------------
