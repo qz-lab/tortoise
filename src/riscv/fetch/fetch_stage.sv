@@ -17,6 +17,7 @@ module fetch_stage #(
 ) (
     input   logic   clk_i, rst_ni, flush_i, debug_mode_i,
 
+    input   riscv_pkg::addr_t       boot_addr_i,
     /* fallback signals to update the prediction history */
     input   logic                   fb_valid_i, fb_branch_taken_i,
     input   riscv_pkg::addr_t       fb_branch_pc_i, fb_target_addr_i,
@@ -38,6 +39,8 @@ module fetch_stage #(
 
     import riscv_pkg::addr_t;
     import riscv_pkg::instr_t;
+    import tortoise_pkg::sbe_predict_t;
+    import tortoise_pkg::fetch_entry_t;
 
     /* first, fetch instructions */
     addr_t  fetch_addr, PC;   /* PC: program counter */
@@ -46,7 +49,7 @@ module fetch_stage #(
     assign fetch_addr_o = PC;
     always_ff @(posedge clk_i or negedge rst_ni) begin: fetch_instr
         if (rst_ni == 1'b0) begin
-            fetched_instrs <= {INSTR_PER_FETCH{instr_t'(0)}};
+            fetched_instrs <= '0;
         end else begin
             if (fetch_req_o & fetch_ack_i) begin    /* handshake */
                 fetch_addr      <= PC;          /* the pc */
@@ -57,13 +60,16 @@ module fetch_stage #(
 
     /* then scan the branches included */
     addr_t  [INSTR_PER_FETCH-1:0]   fetched_addrs;
-    for (genvar i = 0; i < INSTR_PER_FETCH; i++) begin
-        fetched_addrs[i] = fetch_addr + (4*i);    /* 4 bytes each instruction */
+
+    always_comb begin
+        for (int unsigned i = 0; i < INSTR_PER_FETCH; i++)
+            /* 4 bytes each instruction */
+            fetched_addrs[i] = fetch_addr + (4*i);
     end
 
     sbe_predict_t [INSTR_PER_FETCH-1:0] sbe_predict;
     branch_scan #(
-        .NR_INSTR (INSTR_PER_FETCH)
+        .NR_INSTRS (INSTR_PER_FETCH)
     ) if_scan (
         /* update */
         .clk_i, .rst_ni, .flush_i, .debug_mode_i,
@@ -75,24 +81,26 @@ module fetch_stage #(
     );
 
     /* filter out the instructions behind the taken branch */
-    fetch_entry_t [INSTR_PER_FETCH-1:0] scaned_fetch, valid_fetch
+    fetch_entry_t [INSTR_PER_FETCH-1:0] scaned_fetch, valid_fetch;
     logic   set_pc_branch;
-    riscv_pkg::addr_t   pc_branch;
+    addr_t  pc_branch;
 
-    for (genvar i = 0; i < INSTR_PER_FETCH; i++) begin
-        scaned_fetch[i].addr    = fetched_addrs[i];
-        scaned_fetch[i].instr   = fetched_instrs[i];
-        scaned_fetch[i].predict = sbe_predict[i];
-        scaned_fetch[i].ex      = fetch_ex_i;           /* fix it */
+    always_comb begin
+        for (int unsigned i = 0; i < INSTR_PER_FETCH; i++) begin
+            scaned_fetch[i].addr    = fetched_addrs[i];
+            scaned_fetch[i].instr   = fetched_instrs[i];
+            scaned_fetch[i].predict = sbe_predict[i];
+            scaned_fetch[i].ex      = fetch_ex_i;           /* fix it */
+        end
     end
 
     first_taken_branch #(
-        .NR_INSTR (INSTR_PER_FETCH)
+        .NR_INSTRS (INSTR_PER_FETCH)
     ) if_valid (
         .instrs_i(scaned_fetch),
         .instrs_o(valid_fetch),
-        .has_taken_branch(set_pc_branch),
-        .target_addr(pc_branch)
+        .has_taken_branch_o(set_pc_branch),
+        .target_addr_o(pc_branch)
     );
 
     /* at last, push the scaned instructions into the queue */
@@ -101,8 +109,8 @@ module fetch_stage #(
     assign valid_o      = ~is_queue_empty;
 
     instr_queue #(
-        .INSTR_PER_ROW (INSTR_PER_FETCH)
-        .DPETH (tortoise_pkg::IFQ_DEPTH)
+        .INSTR_PER_ROW (INSTR_PER_FETCH),
+        .DEPTH (tortoise_pkg::IFQ_DEPTH)
     ) if_queue (
         .clk_i, .rst_ni, .flush_i,
         .full_o(is_queue_full), .empty_o(is_queue_empty),
@@ -111,8 +119,8 @@ module fetch_stage #(
     );
 
     /* Don't forget to update PC. Incomplete for now. */
-    always_ff @(posedge clk_i or negedge rst_i) begin: update_pc
-        if (rst_i == 1'b0)
+    always_ff @(posedge clk_i or negedge rst_ni) begin: update_pc
+        if (rst_ni == 1'b0)
             PC <= boot_addr_i;
         else begin
             priority case (1'b1)

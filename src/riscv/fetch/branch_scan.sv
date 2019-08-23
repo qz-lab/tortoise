@@ -12,7 +12,7 @@
  */
 
 module branch_scan #(
-    parameter NR_INSTR = tortoise_pkg::INSTR_PER_FETCH
+    parameter NR_INSTRS = tortoise_pkg::INSTR_PER_FETCH
 ) (
     input   logic   clk_i, rst_ni, flush_i, debug_mode_i,
 
@@ -22,10 +22,10 @@ module branch_scan #(
     input   tortoise_pkg::predict_t fb_type_i,
 
     /* the instructions and their pc values to scan */
-    input   riscv_pkg::addr_t   [NR_INSTR-1:0]  branch_pc_i,
-    input   riscv_pkg::instr_t  [NR_INSTR-1:0]  instr_i,
+    input   riscv_pkg::addr_t   [NR_INSTRS-1:0] branch_pc_i,
+    input   riscv_pkg::instr_t  [NR_INSTRS-1:0] instr_i,
 
-    output  tortoise_pkg::sbe_predict_t [NR_INSTR-1:0]  sbe_predict_o
+    output  tortoise_pkg::sbe_predict_t [NR_INSTRS-1:0] sbe_predict_o
 );
 
 /*  TODO: add return-address-stack support
@@ -49,11 +49,11 @@ module branch_scan #(
     assign update_btb = fb_valid_i & (fb_type_i == PREDICT_TARGET);
 
     /* the results of prediction */
-    logic   [NR_INSTR-1:0]  bht_valid, btb_valid, bht_taken;
-    addr_t  [NR_INSTR-1:0]  btb_target;
+    logic   [NR_INSTRS-1:0] bht_valid, btb_valid, bht_taken;
+    addr_t  [NR_INSTRS-1:0] btb_target;
 
     branch_history_table #(
-        .NR_LOOKUP (NR_INSTR)
+        .NR_LOOKUP (NR_INSTRS)
     ) bht (
         /* update */
         .clk_i, .rst_ni, .flush_i, .debug_mode_i,
@@ -63,7 +63,7 @@ module branch_scan #(
     );
 
     branch_target_buffer #(
-        .NR_LOOKUP (NR_INSTR)
+        .NR_LOOKUP (NR_INSTRS)
     ) btb (
         /* update */
         .clk_i, .rst_ni, .flush_i, .debug_mode_i,
@@ -74,7 +74,7 @@ module branch_scan #(
 
     /* generate an entry of prediction for each input instruction */
     always_comb begin: scan_each_instr
-        for (int i = 0; i < NR_INSTR; i++) begin
+        for (int i = 0; i < NR_INSTRS; i++) begin
             reg_t   rs1 /*, rd */;
             data_t  immediate;
 
