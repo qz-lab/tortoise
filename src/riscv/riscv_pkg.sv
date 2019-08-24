@@ -64,7 +64,8 @@ typedef struct packed {
     opcode_t        opcode;
 } instr_t;
 
-typedef logic [4:0] reg_t;
+localparam  int unsigned    NR_REGS = 32;
+typedef logic [$clog2(NR_REGS)-1:0] reg_t;
 
 /* functions to get the immediate */
 /* verilator lint_off UNUSED */

@@ -53,6 +53,7 @@ typedef struct packed {
 } fetch_entry_t;
 
 parameter   IFQ_DEPTH   = `CONFIG_IFQ_DEPTH;
+
 /* scoreboard */
 parameter   SB_ENTRIES  = `CONFIG_SB_ENTRIES;
 
@@ -111,9 +112,14 @@ typedef enum logic [6:0] {
     VFMIN, VFMAX, VFSGNJ, VFSGNJN, VFSGNJX, VFEQ, VFNE, VFLT, VFGE, VFLE, VFGT, VFCPKAB_S, VFCPKCD_S, VFCPKAB_D, VFCPKCD_D
 } fu_op;
 
+/* to represent both GP and FP registers, other than just RISC-V general
+ * registers. */
+localparam int unsigned NR_SBREGS = 32; /* only GP register for now */
+typedef logic [$clog2(NR_SBREGS)-1:0]   sbreg_t;
+
 typedef struct packed {
     logic   valid;  /* whether the value is valid */
-    reg_t   regno;  /* the value is stored in the register */
+    sbreg_t regno;  /* the value is stored in the register */
     data_t  value;  /* the operand value */
 } operand_t;
 
@@ -130,6 +136,22 @@ typedef struct packed {
     exception_t ex;         /* exception has occurred */
     sbe_predict_t   predict;    /* branch predict scoreboard data structure */
 } scoreboard_entry_t;
+
+/* extraced information from scoreboard to execution */
+typedef struct packed {
+    sb_idx_t    index;
+    fu_t        fu;
+    fu_op       op;
+    data_t      operand_a;
+    data_t      operand_b;
+} fu_data_t;
+
+typedef struct packed {
+    sb_idx_t    index;
+    sbreg_t     rd;     /* redundant, just convenient to compare */
+    data_t      result;
+    exception_t ex;
+} fu_result_t;
 
 /* All information needed to determine whether we need to associate an interrupt
  * with the corresponding instruction or not.
