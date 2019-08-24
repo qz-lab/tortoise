@@ -131,7 +131,7 @@ typedef struct packed {
     fu_op       op;         /* operation to perform in each functional unit */
     operand_t   operand1;   /* operand 1: the source register or value */
     operand_t   operand2;   /* operand 2: the source register or value */
-    operand_t   operand3;   /* operand 3: the source register or value */
+    data_t      immediate;  /* operand 3: the immediate of the instruction */
     operand_t   result;     /* result: the target register and value */
     exception_t ex;         /* exception has occurred */
     sbe_predict_t   predict;    /* branch predict scoreboard data structure */
@@ -144,6 +144,8 @@ typedef struct packed {
     fu_op       op;
     data_t      operand_a;
     data_t      operand_b;
+    data_t      operand_imm;
+    addr_t      pc;
 } fu_data_t;
 
 typedef struct packed {

@@ -99,8 +99,9 @@ module scoreboard #(
                 sbe.operand1.valid & sbe.operand2.valid;
 
             /* collect the operations and states */
-            operations[i]       = '{sbe.index, sbe.fu, sbe.op,
-                                sbe.operand1.value, sbe.operand2.value};
+            operations[i]       = '{index: sbe.index, fu: sbe.fu, op: sbe.op,
+                operand_a: sbe.operand1.value, operand_b: sbe.operand2.value,
+                operand_imm: sbe.immediate, pc: sbe.pc};
             ready_to_alu[i]     = (sbe.fu == FU_ALU)    & ready_to_execute;
             ready_to_branch[i]  = (sbe.fu == FU_BRANCH) & ready_to_execute;
             ready_to_csr[i]     = (sbe.fu == FU_CSR)    & ready_to_execute;
