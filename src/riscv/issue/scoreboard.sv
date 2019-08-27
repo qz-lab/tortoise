@@ -322,7 +322,6 @@ module scoreboard #(
 
             /* alu result */
             if (alu_result_valid_i & alu_result_ready_o) begin
-                in_execution[alu_result_idx]    <= 1'b0;
                 sbqueue[alu_result_idx].result.valid    <= 1'b1;
                 sbqueue[alu_result_idx].result.value    <= alu_result_i.result;
                 if (alu_result_i.ex.valid)
@@ -347,7 +346,6 @@ module scoreboard #(
 
             /* branch result */
             if (branch_result_valid_i & branch_result_ready_o) begin
-                in_execution[branch_result_idx]   <= 1'b0;
                 sbqueue[branch_result_idx].result.valid <= 1'b1;
                 sbqueue[branch_result_idx].result.value <= branch_result_i.result;
                 if (branch_result_i.ex.valid)
@@ -372,7 +370,6 @@ module scoreboard #(
 
             /* csr result */
             if (csr_result_valid_i & csr_result_ready_o) begin
-                in_execution[csr_result_idx]    <= 1'b0;
                 sbqueue[csr_result_idx].result.valid    <= 1'b1;
                 sbqueue[csr_result_idx].result.value    <= csr_result_i.result;
                 if (csr_result_i.ex.valid)
@@ -397,7 +394,6 @@ module scoreboard #(
 
             /* lsu result */
             if (lsu_result_valid_i & lsu_result_ready_o) begin
-                in_execution[lsu_result_idx]    <= 1'b0;
                 sbqueue[lsu_result_idx].result.valid    <= 1'b1;
                 sbqueue[lsu_result_idx].result.value    <= lsu_result_i.result;
                 if (lsu_result_i.ex.valid)
