@@ -29,6 +29,7 @@ module decoder (
     import riscv_pkg::*;
     import tortoise_pkg::*;
     import decode_pkg::*;
+    import alu_pkg::*;
 
     logic   is_illegal;
     instr_t instr   = fetch_i.instr;
@@ -74,7 +75,8 @@ module decoder (
 
                 OPFP:   is_illegal = 1'b1;
                 BRANCH: decode_BRANCH   (instr, sbe_o, is_illegal);
-                JALR:   decode_JALR     (instr, sbe_o, is_illegal);
+                JALR:   decode_JALR     (instr, sbe_o, is_illegal,
+                                        .pc(fetch_i.addr));
 
                 JAL:    decode_JAL      (instr, sbe_o, .pc(fetch_i.addr));
 
