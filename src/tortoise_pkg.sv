@@ -166,4 +166,8 @@ typedef struct packed {
   logic        global_enable;
 } irq_ctrl_t;
 
+/* commit stage */
+parameter GPREG_READ_PORTS  = `CONFIG_GPREG_READ_PORTS;
+parameter GPREG_WRITE_PORTS = `CONFIG_GPREG_WRITE_PORTS;
+
 endpackage: tortoise_pkg

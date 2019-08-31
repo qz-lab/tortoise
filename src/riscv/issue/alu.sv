@@ -116,8 +116,11 @@ module alu (
             JAL_R: begin
                 is_minus    = 1'b0;
                 result      = c;    /* link address, calculated in ID */
-                alu_result_o.ex = '{1'b1, riscv_pkg::INSTR_ADDR_MISALIGNED,
-                    alu_sum};
+                alu_result_o.ex = '{
+                    valid:  alu_sum[1:0] != 2'b00,
+                    cause:  riscv_pkg::INSTR_ADDR_MISALIGNED,
+                    tval:   alu_sum
+                };
             end
             default: /* should not happned */;
         endcase

@@ -24,7 +24,11 @@
 `define CONFIG_IFQ_DEPTH        8   /* the depth of instruction fetch queue */
 
 /********************************* ScoreBoard *********************************/
-`define CONFIG_SB_ENTRIES       8
+`define CONFIG_SB_ENTRIES       8   /* the number of Scoreboard entries */
+
+/*********************************** Commit ***********************************/
+`define CONFIG_GPREG_READ_PORTS     3   /* GP register read ports */
+`define CONFIG_GPREG_WRITE_PORTS    1   /* GP register write ports */
 
 /************************************ AXI *************************************/
 `define CONFIG_AXI_ID_WIDTH     4
