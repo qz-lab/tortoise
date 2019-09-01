@@ -1,6 +1,6 @@
 /*
- * File: alu_pkg.sv
- * Desc: ALU operations about decode and execution
+ * File: id_alu.sv
+ * Desc: decode the instructions for ALU
  *
  * Auth: QuanZhao
  * Date: Aug-27-2019
@@ -9,7 +9,7 @@
  * BRANCH, JAL, JALR.
  */
 
-package alu_pkg;
+package id_alu;
 
 import riscv_pkg::*;
 import tortoise_pkg::*;
@@ -283,4 +283,4 @@ function automatic void decode_JAL (
     sbe.op          = ADD;
 endfunction: decode_JAL
 
-endpackage: alu_pkg
+endpackage: id_alu

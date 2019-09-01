@@ -1,101 +1,29 @@
 /*
- * File: decode_pkg.sv
- * Desc: decode functions for each type of OPCODE
+ * File: id_system.sv
+ * Desc: decode the instructions with the opcode SYSTEM
  *
  * Auth: QuanZhao
- * Date: Aug-14-2019
+ * Date: Aug-31-2019
+ *
+ * Different from others, SYSTEM-opcode instructions are handled only in the
+ * commit stage by the CSR unit. At that time, the values of both operands
+ * should be known, which are transferred to the CSR unit. For CSR operantions,
+ * the read result is written back to the register file as well as the
+ * scoreboard, to solve the data dependencies on the target register.
  */
 
-
-package decode_pkg;
+package id_system;
 
 import riscv_pkg::*;
 import tortoise_pkg::*;
 
-function automatic void decode_LOAD (
-    input   instr_t             instr,
-    ref     scoreboard_entry_t  sbe,
-    ref     logic               is_illegal
-);
-    /* LOAD instructions are I-Type. */
-    reg_t       rd      = instr.rem[11:7];
-    logic [2:0] funct3  = instr.rem[14:12];
-    reg_t       rs1     = instr.rem[19:15];
-    data_t      imm     = i_imm(instr.rem);
-
-    sbe.fu          = FU_LOAD;
-    sbe.result      = '{1'b0, rd,  '0};     /* register */
-    sbe.operand1    = '{1'b0, rs1, '0};     /* register */
-    sbe.operand2    = '{1'b1, '0, imm};     /* immediate */
-
-    unique case (funct3)
-        3'b000: sbe.op  = LB;
-        3'b001: sbe.op  = LH;
-        3'b010: sbe.op  = LW;
-        3'b100: sbe.op  = LBU;
-        3'b101: sbe.op  = LHU;
-        3'b110: sbe.op  = LWU;
-        3'b011: sbe.op  = LD;
-        default: is_illegal = 1'b1;
-    endcase
-endfunction: decode_LOAD
-
-function automatic void decode_MISCMEM (
-    input   instr_t             instr,
-    ref     scoreboard_entry_t  sbe,
-    ref     logic               is_illegal
-);
-    /* MISCMEM instructions are I-Type, FENCE and FENCE.I for now. */
-    logic [2:0] funct3  = instr.rem[14:12];
-
-    sbe.fu          = FU_CSR;
-    sbe.result      = '{1'b0, '0, '0};  /* no target register */
-    sbe.operand1    = '{1'b1, '0, '0};  /* not used */
-    sbe.operand2    = '{1'b1, '0, '0};  /* not used */
-
-    unique case (funct3)
-        3'b000: sbe.op  = FENCE;
-        3'b001: sbe.op  = FENCE_I;
-        default: is_illegal = 1'b1;
-    endcase
-
-    /* incomplete */
-    if ({instr.rem[31:15], instr.rem[11:7]} != '0)
-        is_illegal = 1'b1;
-endfunction: decode_MISCMEM
-
-function automatic void decode_STORE (
-    input   instr_t             instr,
-    ref     scoreboard_entry_t  sbe,
-    ref     logic               is_illegal
-);
-    /* STORE instructions are S-Type. */
-    logic [2:0] funct3  = instr.rem[14:12];
-    reg_t       rs1     = instr.rem[19:15];
-    reg_t       rs2     = instr.rem[24:20];
-    data_t      imm     = s_imm(instr.rem);
-
-    sbe.fu          = FU_STORE;
-    sbe.result      = '{1'b0, '0,  '0}; /* no target register */
-    sbe.operand1    = '{1'b0, rs1, '0}; /* register */
-    sbe.operand2    = '{1'b0, rs2, '0}; /* register */
-    sbe.operand3    = '{1'b1, '0,  imm};/* immediate */
-
-    unique case (funct3)
-        3'b000: sbe.op  = SB;
-        3'b001: sbe.op  = SH;
-        3'b010: sbe.op  = SW;
-        3'b011: sbe.op  = SD;
-        default: is_illegal = 1'b1;
-    endcase
-endfunction: decode_STORE
-
 function automatic void decode_SYSTEM (
-    input   instr_t             instr,
-    ref     scoreboard_entry_t  sbe,
+    input   instr_t             instr,      /* RISC-V instruction */
+    ref     scoreboard_entry_t  sbe,        /* decoded instruction */
     ref     logic               is_illegal,
 
-    input   priv_lvl_t          priv,
+    /* system states */
+    input   priv_t              priv,
     input   logic               tsr, tw, tvm, debug_mode
 );
     /* All CSR instructions are I-Type. We treat all other instructions as
@@ -117,16 +45,16 @@ function automatic void decode_SYSTEM (
             sbe.result      = '{1'b1, '0, '0};  /* directly commit */
             sbe.operand1    = '{1'b0, '0, '0};  /* not needed */
             sbe.operand2    = '{1'b0, '0, '0};  /* not needed */
-            sbe.op          = ADD;
+            sbe.op          = ADD;              /* not needed */
 
             unique case (funct7)
                 7'b0000_000: begin  /* ECALL, EBREAK or URET */
                     if (rs2 == 5'b0 && rs1 == 5'b0 && rd == 5'b0)
                         /* ECALL */
                         unique case (priv)
-                            PRIV_LVL_M: sbe.ex = '{1'b1, ENV_CALL_MMODE, '0};
-                            PRIV_LVL_S: sbe.ex = '{1'b1, ENV_CALL_SMODE, '0};
-                            PRIV_LVL_U: sbe.ex = '{1'b1, ENV_CALL_UMODE, '0};
+                            PRIV_M: sbe.ex = '{1'b1, ENV_CALL_MMODE, '0};
+                            PRIV_S: sbe.ex = '{1'b1, ENV_CALL_SMODE, '0};
+                            PRIV_U: sbe.ex = '{1'b1, ENV_CALL_UMODE, '0};
                             default:;
                         endcase
                     else if (rs2 == 5'b0_0001 && rs1 == 5'b0 && rd == 5'b0)
@@ -153,14 +81,14 @@ function automatic void decode_SYSTEM (
                     if (rs2 == 5'b00010 && rs2 == 5'b0 && rd == 5'b0) begin
                         /* SRET */
                         sbe.op  = SRET;
-                        if ((priv == PRIV_LVL_M) || (priv == PRIV_LVL_S && !tsr))
+                        if ((priv == PRIV_M) || (priv == PRIV_S && !tsr))
                             is_illegal  = 1'b0;
                     end
 
                     if (rs2 == 5'b00101 && rs2 == 5'b0 && rd == 5'b0) begin
                         /* WFI */
                         sbe.op  = WFI;
-                        if ((priv == PRIV_LVL_M) || (priv == PRIV_LVL_S && !tw))
+                        if ((priv == PRIV_M) || (priv == PRIV_S && !tw))
                             is_illegal  = 1'b0;
                     end
                 end
@@ -169,7 +97,7 @@ function automatic void decode_SYSTEM (
                     sbe.op    = MRET;
                     is_illegal  = 1'b1;
                     if (rs2 == 5'b00010 && rs1 == 5'b0 && rd == 5'b0)
-                        if (priv == PRIV_LVL_M)
+                        if (priv == PRIV_M)
                             is_illegal  = 1'b0;
                 end
                 7'b000_1001: begin /* SFENCE.VMA */
@@ -182,7 +110,7 @@ function automatic void decode_SYSTEM (
                     sbe.operand2    = '{1'b0, rs2, '0}; /* register */
 
                     if (rd == 5'b0)
-                        if ((priv == PRIV_LVL_M) || (priv == PRIV_LVL_S && !tvm))
+                        if ((priv == PRIV_M) || (priv == PRIV_S && !tvm))
                             is_illegal  = 1'b0;
                 end
 
@@ -192,7 +120,7 @@ function automatic void decode_SYSTEM (
 
         /* The remaining are CSR instructions. */
         3'b001: begin   /* CSRRW */
-            sbe.result      = '{1'b0, rd,  '0}; /* read register */
+            sbe.result      = '{1'b0, rd,  '0}; /* target register */
             sbe.operand1    = '{1'b0, rs1, '0}; /* source register */
             sbe.operand2    = '{1'b1, '0, csr}; /* CSR address */
             sbe.op          = CSR_WRITE;
@@ -249,4 +177,4 @@ function automatic void decode_SYSTEM (
     endcase
 endfunction: decode_SYSTEM
 
-endpackage: decode_pkg
+endpackage: id_system

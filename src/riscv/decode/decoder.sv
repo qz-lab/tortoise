@@ -28,8 +28,11 @@ module decoder (
 
     import riscv_pkg::*;
     import tortoise_pkg::*;
-    import decode_pkg::*;
-    import alu_pkg::*;
+
+    import id_alu::*;
+    import id_csr::*;
+    import id_system::*;
+    import id_miscmem::*;
 
     logic   is_illegal;
     instr_t instr   = fetch_i.instr;
