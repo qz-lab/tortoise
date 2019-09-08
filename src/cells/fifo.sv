@@ -12,24 +12,32 @@ module fifo #(
     parameter INDEX_BITS    = $clog2(DEPTH+1)
 )(
     /* test_mode to bypass clock gating ? */
-    input  logic  clk_i, rst_ni, flush_i, /* testmode_i, */
+    input   logic  clk_i, rst_ni, flush_i, /* testmode_i, */
+
+    /* sometimes we need to investigate the internal data, fix it */
+    output  DTYPE [DEPTH-1:0]   expose_o,
 
     /* status flags */
-    output logic  full_o, empty_o,
-    output logic  [INDEX_BITS-1:0] usage_o,
+    output  logic  full_o, empty_o,
+    output  logic  [INDEX_BITS-1:0] usage_o,
 
     /* control and data signals */
-    input  logic  push_i, pop_i,
-    input  DTYPE  data_i,
-    output DTYPE  data_o
+    input   logic  push_i, pop_i,
+    input   DTYPE  data_i,
+    output  DTYPE  data_o
 );
     logic [INDEX_BITS-1:0]  read_index, write_index;
     DTYPE [DEPTH-1:0]       mem;
 
+    /* expose the interal data */
+    assign expose_o = mem;
+
+    /* state signals */
     assign full_o   = (usage_o == DEPTH);
     assign empty_o  = (usage_o == '0);
     assign data_o   = mem[read_index];
 
+    /* control signals */
     logic push, pop;
     assign push = push_i & (~full_o);
     assign pop  = pop_i & (~empty_o);

@@ -15,7 +15,7 @@
 `define CONFIG_RV64I_SUPPORT    1   /* for now, you must not change it */
 
 /***************************** Instruction Fetch ******************************/
-`define CONFIG_INSTR_PER_FETCH  4   /* the number of instruction per fetch */
+`define CONFIG_INSTR_PER_FETCH  2   /* the number of instruction per fetch */
 
 `define CONFIG_RAS_DEPTH        8   /* the depth of Return Address Stack */
 `define CONFIG_BHT_ENTRIES      1024    /* branch history: taken or not */
@@ -26,6 +26,9 @@
 /********************************* ScoreBoard *********************************/
 `define CONFIG_SB_ENTRIES       8   /* the number of Scoreboard entries */
 
+/* the depths of the speculative and the commit queues in the write buffer */
+`define CONFIG_WB_SPEC_ENTRIES      4
+`define CONFIG_WB_COMMIT_ENTRIES    2
 /*********************************** Commit ***********************************/
 `define CONFIG_GPREG_READ_PORTS     3   /* GP register read ports */
 `define CONFIG_GPREG_WRITE_PORTS    1   /* GP register write ports */

@@ -155,6 +155,33 @@ typedef struct packed {
     exception_t ex;
 } fu_result_t;
 
+/* physical address access */
+parameter WB_SPEC_ENTRIES   = `CONFIG_WB_SPEC_ENTRIES;
+parameter WB_COMMIT_ENTRIES = `CONFIG_WB_COMMIT_ENTRIES;
+
+typedef struct packed {
+    sb_idx_t    index;      /* scoreboard entry index */
+    sbreg_t     rd;         /* scoreboard target register */
+    logic       valid;      /* useful in some cases, mostly a bit verbose */
+    logic       is_w;       /* 0: read, 1: write */
+    logic       is_s;       /* sign-extension or not */
+    addr_t      vaddr;
+    addr_t      paddr;
+    size_t      size;
+    data_t      data;
+    exception_t ex;
+} lsu_entry_t;
+
+typedef struct packed {
+    addr_t      addr;
+    size_t      size;
+} phy_load_t;
+
+typedef struct packed {
+    addr_t      addr;
+    size_t      size;
+    data_t      data;
+} phy_store_t;
 /* All information needed to determine whether we need to associate an interrupt
  * with the corresponding instruction or not.
  */

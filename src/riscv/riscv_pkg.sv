@@ -24,6 +24,21 @@ package riscv_pkg;
 typedef logic [RV_XLEN-1:0] data_t;
 typedef logic [RV_XLEN-1:0] addr_t;
 
+typedef enum logic [2:0] {
+    SZ_1B   = 3'd0,
+    SZ_2B   = 3'd1,
+    SZ_4B   = 3'd2,     /* 32 bits */
+    SZ_8B   = 3'd3,     /* 64 bits */
+    SZ_16B  = 3'd4,     /* 128 bits */
+    SZ_32B  = 3'd5,     /* 256 bits */
+    SZ_64B  = 3'd6,
+    SZ_128B = 3'd7
+} size_t;
+
+/* Byte-enalbe should be related to the system bus, which is of the same width
+ * as the registers, just put it here temporarily. */
+typedef logic [RV_XLEN/8-1:0]   be_t;
+
 /* instruction formats */
 typedef enum logic [6:0] {
     LOAD    = 7'B00_000_11,
@@ -59,6 +74,8 @@ typedef enum logic [6:0] {
     CUSTOM3 = 7'b11_110_11
 } opcode_t;
 
+/* I don't want to make the instruction structure too complex, since they are
+ * only used in the decode stage. */
 typedef struct packed {
     logic [31:7]    rem;
     opcode_t        opcode;
@@ -90,6 +107,31 @@ function automatic data_t j_imm(logic [31:7] rem);  /* 20 bits, [20:1] */
     return {{(RV_XLEN-21){rem[31]}}, rem[31], rem[19:12], rem[20], rem[30:21],
         1'b0};
 endfunction /* verilator lint_on UNUSED */
+
+/* system management */
+
+/* privilege level */
+typedef enum logic [1:0] {
+    PRIV_M = 2'b11,
+    PRIV_S = 2'b01,
+    PRIV_U = 2'b00
+} priv_t;
+
+/* csr address format */
+typedef enum logic [1:0] {
+    CSR_RW0 = 2'b00,
+    CSR_RW1 = 2'b01,
+    CSR_RW2 = 2'b10,
+    CSR_RO  = 2'b11
+} csr_rw_t;
+
+typedef logic [7:0] csr_addr_t;
+
+typedef struct packed {
+    csr_rw_t    csr_rw;
+    priv_t      csr_priv;
+    csr_addr_t  csr_offset;
+} csr_t;
 
 /* exceptions and interrupts */
 typedef enum logic [RV_XLEN-1:0] {
@@ -134,17 +176,14 @@ localparam  logic [RV_XLEN-1:0] M_EXT_INTR_MASK     = RV_XLEN'(1<<11);
 
 typedef logic [RV_XLEN-1:0] ex_tval_t;
 
-/* interrupt */
-
-/* Privilege */
-// --------------------
-// Privilege Spec
-// --------------------
-typedef enum logic[1:0] {
-  PRIV_LVL_M = 2'b11,
-  PRIV_LVL_S = 2'b01,
-  PRIV_LVL_U = 2'b00
-} priv_lvl_t;
+/* debug */
+typedef enum logic [2:0] {
+    DS_8    = 3'd0,
+    DS_16   = 3'd1,
+    DS_32   = 3'd2,
+    DS_64   = 3'd3,
+    DS_128  = 3'd4
+} datasize_t;
 
 // type which holds xlen
 typedef enum logic [1:0] {
@@ -174,7 +213,7 @@ typedef struct packed {
     logic         mprv;   // modify privilege - privilege level for ld/st
     xs_t          xs;     // extension register - hardwired to zero
     xs_t          fs;     // floating point extension register
-    priv_lvl_t    mpp;    // holds the previous privilege mode up to machine
+    priv_t        mpp;    // holds the previous privilege mode up to machine
     logic [1:0]   wpri2;  // writes preserved reads ignored
     logic         spp;    // holds the previous privilege mode up to supervisor
     logic         mpie;   // machine interrupts enable bit active prior to trap
@@ -198,7 +237,7 @@ typedef struct packed {
     logic         mprv;   // modify privilege - privilege level for ld/st
     logic [1:0]   xs;     // extension register - hardwired to zero
     logic [1:0]   fs;     // extension register - hardwired to zero
-    priv_lvl_t    mpp;    // holds the previous privilege mode up to machine
+    priv_t        mpp;    // holds the previous privilege mode up to machine
     logic [1:0]   wpri2;  // writes preserved reads ignored
     logic         spp;    // holds the previous privilege mode up to supervisor
     logic         mpie;   // machine interrupts enable bit active prior to trap
