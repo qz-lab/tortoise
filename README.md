@@ -48,3 +48,8 @@ humble Makefile. If you're insterested, please be patient.
 
 注意：目前所有的代码只是通过了verilator的语法检查，并不能进行编译和功能验证，我
 甚至还没来得及写一个基本的Makefile。如果有感兴趣的同学，请耐心等待。
+
+### This project is not abandoned.
+
+For now, I focus on reading the Linux kernel code. When it's finished, I'll turn to
+learning anolog and digital circuit design, and resurrect this project!
